@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz – Le Feedback dans l'Apprentissage</title>
+<style>
+  :root {
+    --green: #1D9E75;
+    --green-light: #E1F5EE;
+    --green-dark: #0F6E56;
+    --green-deep: #085041;
+    --blue: #378ADD;
+    --blue-light: #E6F1FB;
+    --amber: #EF9F27;
+    --amber-light: #FAEEDA;
+    --red: #E24B4A;
+    --red-light: #FCEBEB;
+    --purple: #7F77DD;
+    --purple-light: #EEEDFE;
+    --gray-100: #F5F5F3;
+    --gray-200: #E8E8E5;
+    --gray-400: #9A9A96;
+    --gray-700: #444441;
+    --text: #1a1a18;
+    --text-muted: #666663;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --shadow: 0 2px 12px rgba(0,0,0,0.08);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: #F2F4F1;
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  .app {
+    flex: 1;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 20px 16px 80px;
+    width: 100%;
+  }
+
+  /* ── SCREENS ── */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* ── HOME ── */
+  .home-hero {
+    background: var(--green);
+    border-radius: var(--radius);
+    padding: 36px 28px 28px;
+    color: #E1F5EE;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .home-hero::before {
+    content: '◎';
+    position: absolute;
+    right: 20px; top: 16px;
+    font-size: 80px;
+    opacity: 0.12;
+    color: white;
+  }
+  .home-hero-tag { font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #9FE1CB; margin-bottom: 10px; }
+  .home-hero h1 { font-size: 24px; font-weight: 600; line-height: 1.3; margin-bottom: 8px; color: #fff; }
+  .home-hero p { font-size: 14px; line-height: 1.6; color: #9FE1CB; }
+
+  .levels-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+  .level-card {
+    background: white;
+    border-radius: var(--radius-sm);
+    padding: 14px 12px;
+    border: 1px solid var(--gray-200);
+    text-align: center;
+    position: relative;
+  }
+  .level-card .lc-icon { font-size: 22px; margin-bottom: 6px; }
+  .level-card .lc-name { font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+  .level-card .lc-desc { font-size: 11px; color: var(--text-muted); line-height: 1.4; }
+  .level-card.locked { opacity: 0.55; }
+  .level-card.unlocked .lc-name { color: var(--green-dark); }
+  .level-card.completed { border-color: var(--green); background: var(--green-light); }
+  .level-card .lc-check { position: absolute; top: 8px; right: 8px; width: 18px; height: 18px; background: var(--green); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 10px; }
+
+  .btn {
+    display: block;
+    width: 100%;
+    padding: 14px 20px;
+    border-radius: var(--radius-sm);
+    border: none;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: transform 0.1s, opacity 0.1s;
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn-primary { background: var(--green); color: white; }
+  .btn-primary:hover { background: var(--green-dark); }
+  .btn-secondary { background: white; color: var(--text); border: 1px solid var(--gray-200); }
+  .btn-secondary:hover { background: var(--gray-100); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .info-box {
+    background: white;
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    border: 1px solid var(--gray-200);
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.6;
+    margin-bottom: 16px;
+  }
+  .info-box strong { color: var(--text); }
+
+  /* ── QUIZ ── */
+  .quiz-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    padding: 12px 16px;
+    background: white;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--gray-200);
+  }
+  .quiz-level-tag {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 20px;
+  }
+  .tag-novice { background: var(--green-light); color: var(--green-dark); }
+  .tag-alaise { background: var(--blue-light); color: #185FA5; }
+  .tag-expert { background: var(--purple-light); color: #534AB7; }
+  .quiz-progress-text { font-size: 13px; font-weight: 600; color: var(--text); }
+  .quiz-score-mini { font-size: 12px; color: var(--text-muted); }
+
+  .progress-bar { height: 5px; background: var(--gray-200); border-radius: 3px; margin-bottom: 20px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--green); border-radius: 3px; transition: width 0.3s; }
+
+  .question-card {
+    background: white;
+    border-radius: var(--radius);
+    border: 1px solid var(--gray-200);
+    padding: 22px 20px;
+    margin-bottom: 14px;
+    box-shadow: var(--shadow);
+  }
+  .question-num { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 10px; }
+  .question-text { font-size: 16px; font-weight: 500; line-height: 1.55; color: var(--text); }
+
+  .answers-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+  .answer-btn {
+    width: 100%;
+    padding: 13px 16px;
+    background: white;
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    text-align: left;
+    cursor: pointer;
+    color: var(--text);
+    line-height: 1.4;
+    transition: border-color 0.15s, background 0.15s;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .answer-btn:hover:not(:disabled) { border-color: var(--green); background: var(--green-light); }
+  .answer-btn .ans-letter {
+    min-width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--gray-100);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+  .answer-btn.correct { border-color: var(--green); background: var(--green-light); }
+  .answer-btn.correct .ans-letter { background: var(--green); color: white; }
+  .answer-btn.wrong { border-color: var(--red); background: var(--red-light); }
+  .answer-btn.wrong .ans-letter { background: var(--red); color: white; }
+  .answer-btn.dimmed { opacity: 0.45; }
+  .answer-btn:disabled { cursor: not-allowed; }
+
+  .feedback-box {
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    font-size: 13px;
+    line-height: 1.6;
+    margin-bottom: 14px;
+    display: none;
+  }
+  .feedback-box.correct { background: var(--green-light); border: 1px solid #5DCAA5; color: var(--green-deep); }
+  .feedback-box.wrong { background: var(--red-light); border: 1px solid #F09595; color: #A32D2D; }
+  .feedback-box .fb-verdict { font-weight: 700; margin-bottom: 4px; font-size: 14px; }
+
+  /* ── RESULTS ── */
+  .result-hero {
+    border-radius: var(--radius);
+    padding: 28px 22px;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+  .result-hero.pass { background: var(--green); color: white; }
+  .result-hero.fail { background: #F5F5F3; border: 1px solid var(--gray-200); }
+  .result-score { font-size: 56px; font-weight: 700; line-height: 1; margin: 8px 0 4px; }
+  .result-hero.pass .result-score { color: white; }
+  .result-hero.fail .result-score { color: var(--text); }
+  .result-label { font-size: 14px; opacity: 0.85; }
+  .result-verdict { font-size: 18px; font-weight: 600; margin-top: 10px; }
+
+  .errors-section { margin-bottom: 16px; }
+  .errors-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 10px; }
+  .error-item {
+    background: white;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--gray-200);
+    border-left: 3px solid var(--red);
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .error-q { font-weight: 600; color: var(--text); margin-bottom: 6px; }
+  .error-yours { color: var(--red); margin-bottom: 3px; }
+  .error-correct { color: var(--green-dark); font-weight: 600; margin-bottom: 4px; }
+  .error-explain { color: var(--text-muted); font-style: italic; }
+
+  /* ── BADGE ── */
+  .badge-screen {
+    text-align: center;
+    padding: 30px 20px;
+  }
+  .badge-icon {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: var(--green);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 52px;
+    margin: 0 auto 20px;
+    box-shadow: 0 0 0 8px var(--green-light), 0 0 0 16px #c5ead9;
+  }
+  .badge-title { font-size: 22px; font-weight: 700; color: var(--text); margin-bottom: 10px; }
+  .badge-msg { font-size: 15px; color: var(--text-muted); line-height: 1.6; max-width: 480px; margin: 0 auto 24px; }
+  .badge-msg strong { color: var(--green-dark); }
+  .stars { font-size: 28px; margin-bottom: 16px; letter-spacing: 4px; }
+  .badge-level-tags { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 24px; }
+  .badge-level-tags span {
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(242,244,241,0.95);
+    backdrop-filter: blur(6px);
+    text-align: center;
+    padding: 10px;
+    font-size: 12px;
+    color: var(--text-muted);
+    border-top: 1px solid var(--gray-200);
+    z-index: 10;
+  }
+  footer span { color: var(--green-dark); font-weight: 600; }
+
+  @media (max-width: 480px) {
+    .levels-grid { grid-template-columns: 1fr; }
+    .home-hero h1 { font-size: 20px; }
+    .question-text { font-size: 15px; }
+    .result-score { font-size: 44px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════ HOME ═══ -->
+<div id="screen-home" class="screen active">
+  <div class="app">
+    <div class="home-hero">
+      <div class="home-hero-tag">Neuroéducation · Quiz formatif</div>
+      <h1>Le Feedback dans l'Apprentissage</h1>
+      <p>Maîtrisez l'un des leviers pédagogiques les plus puissants, de la définition à l'application experte.</p>
+    </div>
+
+    <div class="info-box">
+      <strong>Comment ça marche ?</strong> 10 questions aléatoires par niveau · Score minimum <strong>80%</strong> pour passer au suivant · Correction formative à chaque erreur · Badge final après les 3 niveaux.
+    </div>
+
+    <div class="levels-grid" id="levels-grid">
+      <!-- rendered by JS -->
+    </div>
+
+    <button class="btn btn-primary" id="btn-start" onclick="startCurrentLevel()">Commencer →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ QUIZ ═══ -->
+<div id="screen-quiz" class="screen">
+  <div class="app">
+    <div class="quiz-header">
+      <span class="quiz-level-tag" id="quiz-level-tag">Je découvre</span>
+      <span class="quiz-progress-text" id="quiz-progress">Q 1/10</span>
+      <span class="quiz-score-mini" id="quiz-score-mini">Score : 0</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+
+    <div class="question-card">
+      <div class="question-num" id="q-num">Question 1</div>
+      <div class="question-text" id="q-text"></div>
+    </div>
+
+    <div class="answers-list" id="answers-list"></div>
+
+    <div class="feedback-box" id="feedback-box">
+      <div class="fb-verdict" id="fb-verdict"></div>
+      <div id="fb-explain"></div>
+    </div>
+
+    <button class="btn btn-primary" id="btn-next" style="display:none" onclick="nextQuestion()">Question suivante →</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ RESULTS ═══ -->
+<div id="screen-results" class="screen">
+  <div class="app">
+    <div class="result-hero" id="result-hero">
+      <div id="result-emoji" style="font-size:36px; margin-bottom:6px;"></div>
+      <div class="result-score" id="result-score"></div>
+      <div class="result-label">de réussite</div>
+      <div id="result-prog-bar" style="margin:12px 0 6px; height:8px; background:rgba(255,255,255,0.25); border-radius:4px; overflow:hidden;">
+        <div id="result-prog-fill" style="height:100%; border-radius:4px; transition:width 0.6s ease; background:rgba(255,255,255,0.85);"></div>
+      </div>
+      <div class="result-verdict" id="result-verdict"></div>
+    </div>
+
+    <div class="errors-section" id="errors-section" style="display:none">
+      <div class="errors-title">📋 Révision des erreurs</div>
+      <div id="errors-list"></div>
+    </div>
+
+    <button class="btn btn-primary" id="btn-next-level" onclick="nextLevelOrBadge()" style="margin-bottom:10px"></button>
+    <button class="btn btn-secondary" onclick="retryLevel()">↺ Réessayer ce niveau</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ BADGE ═══ -->
+<div id="screen-badge" class="screen">
+  <div class="app">
+    <div class="badge-screen">
+      <div class="badge-icon">🏅</div>
+      <div class="stars">★ ★ ★</div>
+      <div class="badge-title">Expertise atteinte !</div>
+      <div class="badge-level-tags">
+        <span style="background:var(--green-light);color:var(--green-deep);">✓ Je découvre</span>
+        <span style="background:var(--blue-light);color:#185FA5;">✓ Je suis à l'aise</span>
+        <span style="background:var(--purple-light);color:#534AB7;">✓ J'approche de l'expertise</span>
+      </div>
+      <div class="badge-msg">
+        Bravo, te voilà riche de nouvelles connaissances sur : <strong>Le Feedback dans l'Apprentissage</strong>.<br><br>
+        Tu maîtrises maintenant les concepts fondamentaux, les modèles de Hattie & Timperley, les 4 niveaux, et les conditions d'un feedback véritablement efficace. <em>Achievement unlocked.</em> 🚀
+      </div>
+      <button class="btn btn-primary" style="max-width:320px; margin:0 auto;" onclick="resetAll()">↺ Recommencer depuis le début</button>
+    </div>
+  </div>
+</div>
+
+<footer>Propulsé par <span>Elie Biro</span></footer>
+
+<script>
+// ═══════════════════════════ BANK ═══════════════════════════
+
+const QUESTIONS = {
+  novice: [
+    {
+      q: "Quelle est la taille d'effet (d) du feedback selon Hattie (2008) ?",
+      a: ["d = 0,73","d = 0,45","d = 1,05","d = 0,30"],
+      correct: 0,
+      explain: "Hattie (2008) mesure l'effet du feedback à d = 0,73 dans sa synthèse de 800+ méta-analyses, ce qui le place dans la zone des effets désirés au-dessus du seuil de 0,40."
+    },
+    {
+      q: "Selon l'Education Endowment Foundation (EEF), combien de mois de progrès supplémentaires le feedback peut-il générer ?",
+      a: ["+6 à +8 mois","+2 à +3 mois","+10 à +12 mois","+4 mois"],
+      correct: 0,
+      explain: "Le Teaching & Learning Toolkit de l'EEF place le feedback parmi les interventions à fort impact : +6 à +8 mois de progrès pour un coût faible."
+    },
+    {
+      q: "Selon Hattie & Timperley, quelle est la première grande question du feedback (Feed Up) ?",
+      a: ["Où vais-je ? (les objectifs)","Comment je progresse ?","Que dois-je améliorer ensuite ?","Suis-je capable d'y arriver ?"],
+      correct: 0,
+      explain: "Le 'Feed Up' répond à la question 'Où vais-je ?' — elle porte sur les objectifs d'apprentissage et les critères de réussite. C'est la boussole de tout feedback efficace."
+    },
+    {
+      q: "La deuxième question du modèle de Hattie est 'Feed Back'. Que cherche-t-elle à clarifier ?",
+      a: ["Comment je progresse par rapport à l'objectif ?","Où dois-je aller ensuite ?","Quelle est la prochaine tâche ?","Quels sont mes points forts ?"],
+      correct: 0,
+      explain: "'How am I going?' est la question centrale du Feed Back : l'élève compare sa performance actuelle à l'objectif visé, via auto-évaluation ou évaluation externe."
+    },
+    {
+      q: "La troisième question du modèle de Hattie est 'Feed Forward'. À quoi correspond-elle ?",
+      a: ["Où aller ensuite / quelles nouvelles étapes ?","Comment j'ai performé jusqu'ici ?","Quels sont mes objectifs initiaux ?","Quelle est la bonne réponse ?"],
+      correct: 0,
+      explain: "Le Feed Forward répond à 'Where to next?' : il indique les prochaines étapes, les nouvelles stratégies à mobiliser, et ouvre vers des objectifs plus ambitieux."
+    },
+    {
+      q: "Combien de niveaux de feedback identifie Hattie dans son modèle ?",
+      a: ["4 niveaux","2 niveaux","3 niveaux","5 niveaux"],
+      correct: 0,
+      explain: "Hattie distingue 4 niveaux : tâche, processus, autorégulation, et soi (self). Ces niveaux n'ont pas tous le même impact sur l'apprentissage."
+    },
+    {
+      q: "Quel niveau de feedback est le plus fréquemment utilisé en classe mais pas le plus efficace pour l'apprentissage profond ?",
+      a: ["Le niveau tâche","Le niveau processus","Le niveau autorégulation","Le niveau soi"],
+      correct: 0,
+      explain: "Le feedback au niveau de la tâche (correct/incorrect) est le plus courant. Il est utile pour les débutants mais insuffisant pour développer des apprentissages durables."
+    },
+    {
+      q: "Quel type de feedback est généralement inefficace selon Hattie car il ne contient quasiment aucune information sur l'apprentissage ?",
+      a: ["La louange non spécifique ('Bravo !')","Le feedback sur les stratégies","Le feedback immédiat","Le feedback par les pairs"],
+      correct: 0,
+      explain: "La louange personnelle ('Tu es brillant !', 'Excellent !') est au niveau 'soi' — elle ne répond pas aux trois questions du feedback et n'informe pas l'élève sur comment progresser."
+    },
+    {
+      q: "Comment le cerveau fonctionne-t-il en matière de feedback, selon les neurosciences ?",
+      a: ["Il formule des prédictions puis compare avec la réalité","Il enregistre passivement les informations reçues","Il mémorise uniquement les succès","Il traite d'abord les émotions avant les contenus"],
+      correct: 0,
+      explain: "Le cerveau est un organe prédictif : il génère constamment des hypothèses. Quand une réponse arrive, il la compare à sa prédiction. L'erreur de prédiction déclenche un signal d'apprentissage."
+    },
+    {
+      q: "Qu'est-ce que le feedback, selon la définition de Hattie ?",
+      a: ["Une information fournie par un agent sur les aspects d'une performance","Une récompense donnée après un bon travail","Un jugement global sur les capacités de l'élève","Une note ou un commentaire sur le bulletin"],
+      correct: 0,
+      explain: "Le feedback est 'une information fournie par un agent (enseignant, pair, livre, expérience) sur les aspects d'une performance ou compréhension' — Hattie (2008)."
+    },
+    {
+      q: "Selon Winne & Butler (1994), à quoi peut servir le feedback pour la mémoire de l'apprenant ?",
+      a: ["Confirmer, compléter, réécrire, affiner ou restructurer des informations","Remplacer intégralement les connaissances existantes","Évaluer la qualité de l'enseignant","Classer les élèves par niveau"],
+      correct: 0,
+      explain: "Winne & Butler définissent le feedback comme 'une information grâce à laquelle un apprenant peut confirmer, compléter, réécrire, affiner ou restructurer des informations en mémoire'."
+    },
+    {
+      q: "Que se passe-t-il dans le cerveau quand le feedback est négatif (erreur de prédiction) ?",
+      a: ["Un mécanisme d'apprentissage se déclenche — le cerveau reconfigure son modèle","Le cerveau bloque et cesse d'apprendre","Un circuit de récompense est activé","La motivation intrinsèque augmente automatiquement"],
+      correct: 0,
+      explain: "L'erreur de prédiction (feedback négatif) est précisément ce qui déclenche l'apprentissage neuronal : le cerveau doit recalibrer son modèle interne, ce qui consolide les traces mnésiques."
+    },
+    {
+      q: "Quel outil est présenté comme exemple de feedback immédiat structuré utilisable en classe ?",
+      a: ["Logbook (logbook.education)","Kahoot uniquement","Les carnets de notes papier","Les bulletins trimestriels"],
+      correct: 0,
+      explain: "Logbook (logbook.education) est un outil permettant d'organiser un feedback formateur structuré et tracé pour les élèves."
+    },
+    {
+      q: "Quelle est la principale difficulté du feedback en classe selon la recherche en neuroéducation ?",
+      a: ["Organiser un feedback immédiat (et non différé)","Trouver les bons mots pour chaque élève","Corriger les copies rapidement","Différencier les niveaux d'élèves"],
+      correct: 0,
+      explain: "Les travaux en neuroéducation soulignent que la difficulté centrale en classe est le feedback immédiat : si un exercice est corrigé bien plus tard, le signal d'erreur n'est plus associé à la bonne représentation."
+    },
+    {
+      q: "Selon l'EEF, quel est le coût de mise en œuvre du feedback ?",
+      a: ["Faible","Élevé","Moyen","Variable selon le niveau scolaire"],
+      correct: 0,
+      explain: "L'EEF classe le feedback comme une intervention à 'coût faible, impact élevé' — c'est l'un des meilleurs retours sur investissement pédagogique disponibles."
+    },
+    {
+      q: "Quel chercheur est principalement associé au modèle des trois questions du feedback (Feed Up, Feed Back, Feed Forward) ?",
+      a: ["John Hattie","Jean Piaget","Lev Vygotski","Albert Bandura"],
+      correct: 0,
+      explain: "John Hattie, en collaboration avec Helen Timperley (2007), a formalisé le modèle Feed Up / Feed Back / Feed Forward dans une publication dédiée au pouvoir du feedback."
+    },
+    {
+      q: "Selon Deci, Koestner & Ryan (1999), quel est l'effet des récompenses extrinsèques (stickers, cadeaux) sur la performance ?",
+      a: ["Effet négatif (d = –0,34)","Effet positif modéré (d = +0,45)","Aucun effet","Effet très positif (d = +0,80)"],
+      correct: 0,
+      explain: "La méta-analyse de Deci et al. montre une corrélation négative entre récompenses extrinsèques et performance (d = –0,34). Ces récompenses contiennent si peu d'information sur la tâche qu'elles ne constituent pas vraiment un feedback."
+    },
+    {
+      q: "À quoi sert principalement le feedback selon Hattie ?",
+      a: ["Réduire l'écart entre performance actuelle et objectif visé","Sanctionner les erreurs des élèves","Motiver les élèves par des encouragements","Remplacer l'instruction directe"],
+      correct: 0,
+      explain: "La fonction centrale du feedback est de 'réduire les discordances entre compréhensions/performances actuelles et un objectif ou but d'apprentissage' — Hattie (2008)."
+    },
+    {
+      q: "Quel pourcentage des études de Kluger & DeNisi (1996) montrait un effet NÉGATIF du feedback ?",
+      a: ["32 %","12 %","48 %","5 %"],
+      correct: 0,
+      explain: "Sur 131 études, Kluger & DeNisi ont calculé 470 tailles d'effet : 32 % étaient négatifs, ce qui démontre que le feedback peut nuire à l'apprentissage selon la façon dont il est mis en œuvre."
+    },
+    {
+      q: "Que signifie l'acronyme EEF dans le contexte des recherches sur l'enseignement ?",
+      a: ["Education Endowment Foundation","European Education Framework","Experimental Evaluation of Feedback","Effective Educational Findings"],
+      correct: 0,
+      explain: "L'EEF (Education Endowment Foundation) est une organisation britannique qui compile des méta-analyses éducatives dans son Teaching & Learning Toolkit, référence mondiale sur l'impact des pratiques pédagogiques."
+    },
+    {
+      q: "Quel niveau de feedback vise à développer l'autonomie de l'élève dans la surveillance de ses propres apprentissages ?",
+      a: ["Le niveau autorégulation","Le niveau tâche","Le niveau soi","Le niveau processus"],
+      correct: 0,
+      explain: "Le feedback au niveau de l'autorégulation cible la capacité de l'élève à se monitorer, s'évaluer et réguler ses propres actions — c'est le niveau qui produit les effets les plus durables."
+    },
+    {
+      q: "Le feedback efficace doit-il uniquement porter sur les erreurs ?",
+      a: ["Non, il doit aussi porter sur les réussites","Oui, l'erreur est le seul vecteur d'apprentissage","Cela dépend de l'âge des élèves","Oui, pour éviter la complaisance"],
+      correct: 0,
+      explain: "La littérature montre qu'un feedback équilibré — portant sur les erreurs ET les réussites — est plus efficace. Signaler explicitement ce qui fonctionne bien renforce la confiance et l'engagement."
+    },
+    {
+      q: "Qu'entend-on par 'feedback de niveau processus' ?",
+      a: ["Feedback sur les stratégies utilisées pour accomplir la tâche","Feedback sur le résultat final","Feedback sur la personnalité de l'élève","Feedback donné à la fin du semestre"],
+      correct: 0,
+      explain: "Le feedback processus porte sur les stratégies et méthodes employées par l'élève — ex : 'Utilise la stratégie de compréhension qu'on a vue pour ce texte'. Il aide à comprendre comment mieux travailler."
+    },
+    {
+      q: "Quelle forme de feedback semble être la plus efficace selon la littérature scientifique ?",
+      a: ["Le feedback oral (même si moins réfléchi)","Le feedback écrit long","Le feedback différé en fin d'unité","La note chiffrée seule"],
+      correct: 0,
+      explain: "La littérature indique que les feedbacks oraux sont souvent plus efficaces que les écrits — attention toutefois : ce sont aussi ceux sur lesquels on réfléchit le moins."
+    },
+    {
+      q: "Lorsque le feedback menace l'estime de soi, quel comportement cela provoque-t-il chez l'élève ?",
+      a: ["Évitement du risque et réduction de l'effort","Augmentation de la motivation intrinsèque","Meilleure mémorisation des corrections","Engagement plus fort dans la tâche"],
+      correct: 0,
+      explain: "Hattie explique que quand le feedback attire l'attention sur le soi, les élèves évitent les tâches risquées, minimisent leurs efforts et craignent davantage l'échec (Black & Wiliam, 1998)."
+    },
+    {
+      q: "Pour que le feedback soit efficace, doit-il être reçu uniquement par l'enseignant ?",
+      a: ["Non, le feedback des élèves vers l'enseignant est crucial","Oui, seul l'enseignant peut donner un feedback valide","Oui, les élèves ne savent pas évaluer leur propre travail","Non, mais uniquement le feedback entre pairs compte"],
+      correct: 0,
+      explain: "Hattie souligne que le feedback est le plus puissant quand il va des élèves vers l'enseignant — quand ce dernier comprend ce que l'élève sait, où il fait des erreurs, ce qui l'engage. Cela rend l'apprentissage visible."
+    },
+    {
+      q: "Quel objectif pédagogique est associé aux questions de type SMART liées au feedback ?",
+      a: ["Définir des objectifs spécifiques, mesurables, réalistes et temporellement définis","Choisir les meilleures récompenses pour les élèves","Créer des grilles de notation numériques","Organiser les contenus de cours par semaine"],
+      correct: 0,
+      explain: "Les objectifs SMART (Spécifique, Mesurable, Action, Réaliste, Temps) permettent de clarifier les critères du Feed Up, condition nécessaire pour que le feedback soit ancré dans un but précis."
+    },
+    {
+      q: "Selon les neurosciences, que faut-il toujours proposer au cerveau avant de corriger ?",
+      a: ["Produire / s'engager activement","Relire le cours","Écouter l'explication de l'enseignant","Mémoriser la règle"],
+      correct: 0,
+      explain: "Les recherches en neuroéducation insistent : pour que le feedback soit neuronalement efficace, il faut que l'élève produise d'abord (formuler une hypothèse, répondre, écrire). L'engagement actif est le prérequis du feedback."
+    },
+    {
+      q: "Selon Nuthall (2005), d'où provient la majorité du feedback reçu par les élèves dans une journée de classe ?",
+      a: ["Des autres élèves (pairs)","De l'enseignant uniquement","Des manuels scolaires","Des outils numériques"],
+      correct: 0,
+      explain: "Nuthall (2005) a montré que la plupart des feedbacks reçus par les élèves en classe provient d'autres élèves — et que la majorité de ce feedback entre pairs est inexact."
+    },
+    {
+      q: "Quelle est la position du feedback dans le classement des effets des pratiques pédagogiques selon Hattie ?",
+      a: ["10e rang avec d = 0,73","1er rang avec d = 1,44","30e rang avec d = 0,52","2e rang avec d = 0,90"],
+      correct: 0,
+      explain: "Hattie classe le feedback au 10e rang des facteurs liés à l'enseignement avec d = 0,73, largement au-dessus du seuil de 0,40 qui délimite la zone des 'effets désirés'."
+    },
+    {
+      q: "Le feedback est-il toujours une réponse à une erreur ?",
+      a: ["Non, il peut confirmer une bonne réponse ou indiquer d'autres pistes","Oui, le feedback n'a d'utilité que pour corriger","Cela dépend du niveau scolaire","Oui, mais uniquement en évaluation sommative"],
+      correct: 0,
+      explain: "Le feedback peut confirmer à l'élève qu'il est correct, indiquer que plus d'information est nécessaire, pointer des directions à explorer, ou signaler des stratégies alternatives — pas seulement corriger."
+    }
+  ],
+
+  alaise: [
+    {
+      q: "En quoi le Feed Forward se distingue-t-il fondamentalement du Feed Back dans le modèle de Hattie ?",
+      a: ["Il est orienté vers l'avenir et de nouvelles stratégies, pas vers l'évaluation passée","Il porte uniquement sur les réussites de l'élève","Il est réservé aux élèves en difficulté","Il correspond à la note finale de période"],
+      correct: 0,
+      explain: "Le Feed Back regarde en arrière (comment ça s'est passé ?), tandis que le Feed Forward regarde en avant (que faire ensuite, quelles stratégies adopter ?). La distinction est fondamentale pour éviter de réduire le feedback à une correction."
+    },
+    {
+      q: "Pourquoi la louange personnelle ('Tu es très intelligent !') est-elle contre-productive selon Hattie ?",
+      a: ["Elle détourne l'attention de la tâche vers le soi, ce qui amplifie la peur de l'échec","Elle est trop subjective pour être utile","Elle augmente l'anxiété de performance chez tous les élèves","Elle est inefficace uniquement pour les garçons"],
+      correct: 0,
+      explain: "Quand le feedback pointe vers le 'soi', l'élève cherche à protéger son image — il évite les tâches difficiles, réduit ses efforts, et développe une peur de l'échec. C'est l'effet de la théorie de l'entité (Dweck)."
+    },
+    {
+      q: "Selon Carless (2006), quel écart existe entre la perception des enseignants et celle des élèves concernant la qualité du feedback ?",
+      a: ["70 % des enseignants pensent donner un bon feedback détaillé, mais seulement 45 % des élèves le confirment","Les élèves surestiment la qualité du feedback qu'ils reçoivent","Les deux groupes s'accordent sur la fréquence mais pas la qualité","Les enseignants sous-estiment leur propre pratique de feedback"],
+      correct: 0,
+      explain: "Carless (2006) révèle un écart significatif : 70 % des enseignants déclarent fournir souvent un feedback détaillé aidant à progresser, mais seulement 45 % des élèves partagent ce point de vue — signe que le feedback fourni n'est pas toujours reçu."
+    },
+    {
+      q: "Quelle nuance importante la méta-analyse de Kluger & DeNisi (1996) apporte-t-elle sur le feedback ?",
+      a: ["Le feedback est plus efficace sur les réponses correctes que sur les incorrectes","Le feedback est toujours bénéfique quelle que soit la forme","Le feedback écrit est supérieur au feedback oral","Le feedback de pair est meilleur que celui de l'enseignant"],
+      correct: 0,
+      explain: "Kluger & DeNisi montrent que le feedback est plus efficace quand il porte sur les réponses correctes (consolidation) que sur les incorrectes, et que 32 % des effets peuvent être négatifs selon la mise en œuvre."
+    },
+    {
+      q: "Pourquoi les récompenses extrinsèques (stickers, points bonus) nuisent-elles à l'apprentissage, selon Deci et al. (1999) ?",
+      a: ["Elles sapent la motivation intrinsèque et empêchent l'autorégulation","Elles distraient les élèves de leurs pairs","Elles créent des inégalités entre élèves","Elles augmentent l'anxiété de test"],
+      correct: 0,
+      explain: "Les récompenses extrinsèques 'sapent la capacité des personnes à prendre la responsabilité de se motiver ou de se réguler elles-mêmes' (Deci et al., 1999). Elles sont un mécanisme de contrôle, pas d'information."
+    },
+    {
+      q: "Quelle condition est nécessaire pour qu'un feedback sur les processus soit efficace ?",
+      a: ["L'élève doit avoir une compréhension partielle de la tâche — pas en acquisition totale","L'élève doit être en situation d'échec complet","L'élève doit être avancé et autonome","La tâche doit être très simple et répétitive"],
+      correct: 0,
+      explain: "Hattie précise que le feedback processus est efficace quand l'élève a déjà une base — si un élève n'a aucune compréhension, mieux vaut d'abord de l'instruction directe avant d'introduire un feedback sur les stratégies."
+    },
+    {
+      q: "Comment distinguer feedback formatif et feedback sommatif dans leur fonction pédagogique ?",
+      a: ["Le formatif vise à guider la progression en cours d'apprentissage ; le sommatif à certifier un niveau acquis","Le formatif est oral, le sommatif est écrit","Le formatif est individuel, le sommatif est collectif","Il n'y a pas de différence fonctionnelle réelle"],
+      correct: 0,
+      explain: "Le feedback formatif intervient pendant l'apprentissage pour le réorienter (Feed Forward), tandis que le sommatif évalue en fin de séquence. Confondre les deux affaiblit la puissance du feedback comme outil d'apprentissage."
+    },
+    {
+      q: "Pourquoi la mémorisation par questionnement (effet test) est-elle plus efficace que la relecture pour le feedback neuronal ?",
+      a: ["Parce qu'elle active le cerveau prédictif — la confrontation hypothèse/réponse crée le signal d'apprentissage","Parce qu'elle est plus rapide","Parce qu'elle évite la surcharge cognitive","Parce qu'elle mobilise la mémoire de travail uniquement"],
+      correct: 0,
+      explain: "L'effet test exploite le mécanisme prédictif du cerveau : formuler une réponse avant de savoir si elle est juste crée une prédiction. La confrontation avec la bonne réponse génère un signal d'erreur (ou de confirmation) — moteur de l'encodage à long terme."
+    },
+    {
+      q: "Qu'indique le concept de Zone Proximale de Développement (ZPD, Vygotski) pour le feedback ?",
+      a: ["Le feedback doit se situer légèrement au-dessus du niveau actuel — ni trop facile, ni hors de portée","Le feedback doit uniquement valider les acquis déjà maîtrisés","Le feedback est inutile en dehors des interactions formelles","Le niveau du feedback doit être fixé par l'enseignant seul"],
+      correct: 0,
+      explain: "La ZPD de Vygotski implique que pour être efficace, le feedback doit opérer dans la zone où l'élève peut progresser avec aide — trop en deçà de ses capacités, il est inutile ; trop au-dessus, il est décourageant."
+    },
+    {
+      q: "Selon les recherches en développement socioémotionnel, quel ratio de feedbacks positifs est nécessaire pour compenser un feedback négatif chez l'élève ?",
+      a: ["5 feedbacks positifs pour 1 négatif","1 feedback positif pour 1 négatif","3 pour 1","10 pour 1"],
+      correct: 0,
+      explain: "Les recherches sur l'attachement et le développement socioémotionnel estiment ce ratio à 5:1 dans le ressenti — il faut 5 feedbacks positifs pour compenser l'impact émotionnel d'un seul feedback négatif, surtout chez les enfants et adolescents."
+    },
+    {
+      q: "Pourquoi les enfants et adolescents tirent-ils plus de bénéfice des feedbacks positifs que négatifs, contrairement aux adultes ?",
+      a: ["Ils ne perçoivent pas le feedback négatif comme un outil de changement comportemental","Leur cortex préfrontal est plus développé","Ils sont plus sensibles aux récompenses sociales","Ils ont moins de mémoire de travail disponible"],
+      correct: 0,
+      explain: "Les recherches en psychologie du développement montrent que les enfants-adolescents n'interprètent pas le feedback négatif comme un levier de changement, contrairement aux adultes. Ce phénomène est observé empiriquement même si ses causes exactes restent débattues."
+    },
+    {
+      q: "Quelle est la limite principale du feedback au niveau 'soi' ('Tu es un grand travailleur !') ?",
+      a: ["Il ne répond à aucune des trois questions du feedback et n'informe pas sur la tâche","Il est trop complexe à comprendre pour de jeunes élèves","Il est uniquement efficace en contexte d'évaluation formative","Il crée de la jalousie entre pairs"],
+      correct: 0,
+      explain: "Le feedback 'soi' — louange personnelle — ne répond ni au Feed Up, ni au Feed Back, ni au Feed Forward. Il ne donne aucune information sur comment progresser et peut au contraire développer une dépendance à l'approbation externe."
+    },
+    {
+      q: "Comment le feedback s'articule-t-il avec la métacognition selon les recherches en sciences cognitives ?",
+      a: ["Il développe la capacité de l'élève à se monitorer, évaluer et ajuster ses stratégies (autorégulation)","Il remplace la réflexion métacognitive par une évaluation externe","Il est uniquement utile après une phase de planification","Il s'oppose à l'autorégulation"],
+      correct: 0,
+      explain: "Le feedback, surtout au niveau autorégulation, renforce directement les compétences métacognitives : l'élève apprend à superviser sa progression (monitoring), à contrôler ses stratégies et à évaluer ses résultats (évaluation post-tâche)."
+    },
+    {
+      q: "Que révèle la notion de 'cerveau prédictif' pour la pédagogie du feedback ?",
+      a: ["Il faut toujours faire produire l'élève avant de corriger pour activer le mécanisme d'erreur de prédiction","Il faut donner les réponses avant les questions pour orienter la prédiction","La prédiction remplace avantageusement la rétroaction","Le cerveau ne peut traiter qu'un seul feedback à la fois"],
+      correct: 0,
+      explain: "Puisque le cerveau apprend surtout via l'erreur de prédiction (comparaison entre ce qu'il attend et ce qu'il reçoit), l'engagement actif de l'élève AVANT la correction est indispensable pour que le feedback ait un effet neuronal réel."
+    },
+    {
+      q: "Dans quel cas le feedback au niveau de la tâche peut-il être suffisant ?",
+      a: ["Quand l'élève est en phase d'acquisition initiale — il a besoin de savoir si sa réponse est correcte","Quand l'élève est expert dans le domaine","Quand la tâche est très complexe","En évaluation sommative uniquement"],
+      correct: 0,
+      explain: "Hattie précise que pour les apprenants débutants en phase d'acquisition, le feedback tâche (correct/incorrect) est approprié. C'est à mesure que l'élève gagne en compétence qu'on peut monter vers les niveaux processus et autorégulation."
+    },
+    {
+      q: "Selon la recherche, quel est l'impact d'un feedback administré de façon 'contrôlante' ('tu aurais dû faire comme ça') ?",
+      a: ["Très négatif — d = –0,78 sur la performance","Légèrement positif car il structure l'élève","Neutre — le ton ne change pas l'effet","Positif pour les élèves à haute motivation"],
+      correct: 0,
+      explain: "Deci et al. montrent que le feedback administré de façon contrôlante (normatif, prescriptif) produit des effets très négatifs (d = –0,78), car il sape la motivation intrinsèque et l'autorégulation."
+    },
+    {
+      q: "Quelle est la différence entre 'comprendre' et 'mémoriser' dans le contexte du feedback ?",
+      a: ["Comprendre ne suffit pas à mémoriser — deux processus cognitifs distincts qui nécessitent chacun un traitement spécifique","Comprendre implique automatiquement mémoriser","Mémoriser précède toujours la compréhension","Il n'y a pas de différence fonctionnelle"],
+      correct: 0,
+      explain: "La recherche en sciences cognitives insiste sur cette confusion fréquente chez les élèves : comprendre quelque chose ne garantit pas de s'en souvenir. Le feedback doit donc cibler les deux — clarifier la compréhension ET soutenir la mémorisation à long terme."
+    },
+    {
+      q: "Que révèle l'étude de Carless (2006) sur la perception du feedback par les enseignants et les élèves ?",
+      a: ["Un biais de confirmation : les enseignants surestiment largement la qualité de leur feedback","Les enseignants sont plus critiques envers leur propre pratique","Les élèves et enseignants ont une vision identique du feedback","Les élèves reçoivent trop de feedback selon eux-mêmes"],
+      correct: 0,
+      explain: "L'écart Carless illustre un biais de perception : les enseignants croient donner plus et mieux qu'ils ne le font réellement aux yeux des élèves. Cela souligne l'importance de vérifier que le feedback est bien reçu et compris."
+    },
+    {
+      q: "Comment un feedback oral se distingue-t-il d'un feedback écrit en termes d'efficacité et de réflexivité ?",
+      a: ["L'oral est souvent plus immédiat et impactant, mais l'écrit favorise davantage la réflexion","L'écrit est toujours supérieur car il est tracé","L'oral est supérieur car il n'y a pas de trace écrite","Ils sont strictement équivalents"],
+      correct: 0,
+      explain: "La littérature note que les feedbacks oraux semblent plus efficaces (immédiateté, interaction), mais ce sont aussi ceux sur lesquels l'enseignant réfléchit le moins. Les feedbacks écrits favorisent plus la réflexivité — un compromis à trouver selon les objectifs."
+    },
+    {
+      q: "Quel est l'impact des récompenses verbales (félicitations orales) sur la motivation intrinsèque selon Cameron & Pierce (1994) ?",
+      a: ["Positif — les félicitations verbales augmentent la motivation intrinsèque contrairement aux récompenses tangibles","Négatif — similaire aux récompenses tangibles","Nul — aucune différence observée","Négatif mais uniquement pour les tâches intéressantes"],
+      correct: 0,
+      explain: "Cameron & Pierce distinguent les récompenses tangibles (effets négatifs sur la motivation intrinsèque) des récompenses verbales (félicitations), qui produisent un effet positif. La nature du feedback compte, pas seulement son existence."
+    },
+    {
+      q: "Selon Hattie, quelle forme de feedback est la plus puissante dans les méta-analyses ?",
+      a: ["Le feedback qui fournit des indices (cues) ou en lien direct avec les objectifs d'apprentissage","Le feedback visuel via vidéo uniquement","La note chiffrée avec commentaire","Le feedback entre pairs non structuré"],
+      correct: 0,
+      explain: "Les formes les plus efficaces selon Hattie : le feedback par cues (indices), le feedback vidéo/audio/assisté par ordinateur, et le feedback explicitement lié aux objectifs d'apprentissage — soit des formes très ciblées et informatives."
+    },
+    {
+      q: "Pourquoi le feedback entre pairs est-il risqué s'il n'est pas encadré ?",
+      a: ["La majorité du feedback entre pairs observée en classe est inexacte","Les pairs manquent d'autorité pour que l'élève accepte le retour","Le feedback entre pairs est trop positif pour être utile","Les élèves ne comprennent pas les critères d'évaluation"],
+      correct: 0,
+      explain: "Nuthall (2005) a montré que la plupart du feedback reçu par les élèves vient de leurs pairs — et que la majorité de ce feedback est incorrect. Sans formation explicite à l'évaluation par les pairs, ce feedback peut renforcer des erreurs."
+    },
+    {
+      q: "Qu'est-ce que l'effet Sadler (1989) dans le contexte du feedback ?",
+      a: ["C'est le pouvoir de combler l'écart entre où l'élève en est et où il vise à être","C'est l'effet de halo dans la notation","C'est la tendance à donner plus de feedback aux bons élèves","C'est la résistance des élèves au feedback correctif"],
+      correct: 0,
+      explain: "Sadler (1989) a argumenté de façon convaincante que c'est le fait de combler l'écart entre le niveau actuel et le niveau visé qui produit la puissance du feedback. Cette notion d'écart à réduire est centrale dans la théorie de Hattie."
+    },
+    {
+      q: "Quel est le lien entre feedback différé et consolidation mémorielle ?",
+      a: ["Plus le feedback est différé après la production, moins il est lié à la bonne représentation mentale — l'apprentissage est amoindri","Le feedback différé est toujours supérieur car il laisse time à la réflexion","Il n'y a pas de lien entre timing et efficacité du feedback","Le feedback différé favorise la mémoire à long terme"],
+      correct: 0,
+      explain: "Les neurosciences et la recherche en pédagogie l'expliquent : si on corrige bien après la production, le signal d'erreur ne peut plus être associé à la représentation mentale qui était active au moment de la réponse — la consolidation est compromise."
+    },
+    {
+      q: "Quelle distinction Hattie fait-il entre instruction et feedback ?",
+      a: ["L'instruction vise à enseigner ; le feedback vise à combler l'écart entre compris et visé — mais les deux peuvent se mêler","L'instruction est toujours préalable, jamais simultanée au feedback","Le feedback remplace avantageusement l'instruction directe","Ils sont fonctionnellement identiques"],
+      correct: 0,
+      explain: "Hattie décrit un continuum : à une extrémité, instruction et feedback sont distincts ; quand le feedback inclut une correction élaborée, il 'prend la forme d'une nouvelle instruction plutôt que d'informer simplement sur la correction' (Kulhavy, 1977)."
+    },
+    {
+      q: "Comment définir un feedback 'clair, purposeful, meaningful' selon Hattie ?",
+      a: ["Clair (compréhensible), intentionnel (lié à un objectif précis), significatif (connecté aux savoirs préalables)","Clair (simple), positif (valorisant) et immédiat","Clair (court), utile (générique), mémorable (frappant)","Clair (écrit), professionnel (formel) et analytique (détaillé)"],
+      correct: 0,
+      explain: "Pour être efficace, Hattie précise que le feedback doit être clair, intentionnel, significatif, compatible avec les savoirs préalables de l'élève, et déclencher un traitement actif de l'information."
+    },
+    {
+      q: "Quel est l'effet des feedbacks programmés (instruction programée type Skinner) sur la réussite selon Hattie ?",
+      a: ["Parmi les formes les moins efficaces de feedback","Parmi les formes les plus efficaces","Equivalent au feedback personnalisé de l'enseignant","Très efficace uniquement pour les mathématiques"],
+      correct: 0,
+      explain: "Hattie classe l'instruction programmée et la punition/récompense parmi les formes les moins efficaces de feedback — car elles contiennent peu d'information sur la tâche et ne répondent pas aux trois questions fondamentales."
+    },
+    {
+      q: "En quoi le feedback est-il une 'conséquence de la performance' selon Hattie ?",
+      a: ["Il survient APRÈS une production de l'élève et porte sur cette production — il réagit à quelque chose","Il est planifié avant toute interaction","Il est indépendant de ce que fait l'élève","Il porte sur les dispositions de l'élève, pas ses productions"],
+      correct: 0,
+      explain: "Hattie définit le feedback comme une 'consequence of performance' — il est réactif à une production. Sans production préalable, il n'y a pas de feedback possible, d'où l'importance de faire produire l'élève avant de corriger."
+    },
+    {
+      q: "Que signifie 'rendre l'apprentissage visible' (Visible Learning) dans le contexte du feedback ?",
+      a: ["Rendre visible pour l'enseignant ce que l'élève comprend, où il échoue et ce qui l'engage","Afficher publiquement les notes des élèves","Rendre les objectifs de cours visibles sur un tableau","Utiliser des supports visuels pendant les leçons"],
+      correct: 0,
+      explain: "Pour Hattie, 'Visible Learning' signifie que les enseignants doivent 'voir' l'apprentissage à travers les yeux des élèves — et les élèves doivent 'voir' leur propre apprentissage. Le feedback, surtout dans le sens élève→enseignant, rend cet apprentissage visible."
+    }
+  ],
+
+  expert: [
+    {
+      q: "Un enseignant dit à un élève : 'Tu as mis beaucoup d'efforts dans ce devoir, c'est fantastique !' À quel niveau de feedback cela correspond-il et pourquoi est-ce problématique ?",
+      a: ["Niveau 'soi' — ce feedback détourne l'attention de la tâche et peut paradoxalement amplifier la peur de l'échec futur","Niveau processus — il valorise la stratégie d'effort qui est efficace","Niveau tâche — il est utile pour les élèves en phase d'acquisition","Niveau autorégulation — il renforce l'autonomie de l'élève"],
+      correct: 0,
+      explain: "Bien que positif en apparence, ce feedback est au niveau 'soi' : il attire l'attention sur la personne, pas la tâche. Cela peut créer une fixation sur l'approbation externe et, selon les travaux de Dweck, induire un état d'esprit figé ('fixed mindset') si mal dosé."
+    },
+    {
+      q: "Comment expliquer que 32 % des interventions de feedback produisent des effets négatifs sur l'apprentissage ?",
+      a: ["Le feedback peut menacer le soi, être décontextualisé, administré de façon contrôlante ou déclencher des stratégies d'évitement","Le feedback est rarement correctement mis en œuvre en classe","Le feedback ne fonctionne que pour les élèves à haute motivation","Les enseignants manquent systématiquement de formation"],
+      correct: 0,
+      explain: "Kluger & DeNisi (1996) identifient plusieurs mécanismes : le feedback qui menace l'estime de soi, le feedback administré de façon contrôlante (d = –0,78), les feedbacks trop complexes ou trop simples, ou ceux qui redirigent l'attention vers le soi plutôt que la tâche."
+    },
+    {
+      q: "Analyser la situation suivante : un élève corrige un QCM deux semaines après l'avoir passé sans avoir revu la matière entre-temps. Quel est le principal obstacle à l'efficacité du feedback ?",
+      a: ["Le signal d'erreur de prédiction ne peut plus être associé aux représentations mentales actives au moment de la réponse — la trace mnésique est trop dégradée","L'élève n'a pas assez de motivation pour traiter le feedback","Le QCM n'est pas un format adapté au feedback","La tâche n'a pas été suffisamment explicitée au départ"],
+      correct: 0,
+      explain: "Le mécanisme prédictif du cerveau nécessite que le feedback intervienne quand la représentation mentale de la réponse est encore active. Deux semaines après, la trace est effacée ou fortement dégradée — le signal d'erreur ne peut pas recalibrer le bon réseau neuronal."
+    },
+    {
+      q: "Un enseignant donne en classe beaucoup de feedback oral, mais les élèves semblent ne pas l'utiliser. Quelle hypothèse principale la recherche de Hattie suggère-t-elle ?",
+      a: ["Le feedback est fourni mais non reçu ni interprété — l'enjeu est la réception et l'utilisation, pas seulement l'émission","Les élèves manquent de motivation générale","Le format oral est inefficace pour ce groupe","L'enseignant ne maîtrise pas les contenus disciplinaires"],
+      correct: 0,
+      explain: "Hattie insiste : 'la clé est un feedback reçu et utilisé par les élèves'. Beaucoup d'enseignants croient donner du feedback, mais l'enjeu réel est de s'assurer que l'élève reçoit l'information, l'interprète correctement et l'intègre dans sa production suivante."
+    },
+    {
+      q: "Comment la Zone Proximale de Développement de Vygotski et le modèle de feedback de Hattie sont-ils complémentaires ?",
+      a: ["Les deux identifient un écart optimal à combler : ZPD entre ce que l'élève peut faire seul/avec aide ; Hattie entre performance actuelle/objectif","Ils sont contradictoires : Vygotski insiste sur l'interaction sociale, Hattie sur l'autonomie","La ZPD concerne les jeunes enfants, le modèle de Hattie s'applique aux adultes uniquement","Ils sont indépendants — l'un est développemental, l'autre purement éducatif"],
+      correct: 0,
+      explain: "Les deux modèles convergent sur la notion d'écart productif : Vygotski définit la ZPD comme l'espace entre ce qu'on fait seul et ce qu'on peut faire avec aide ; Hattie définit le feedback comme un mécanisme pour combler l'écart entre la performance actuelle et le but. Les deux supposent que ni trop facile ni trop difficile n'est optimal."
+    },
+    {
+      q: "Pourquoi un feedback identique peut-il avoir des effets opposés selon le niveau d'expertise de l'apprenant ?",
+      a: ["Un apprenant débutant a besoin de feedback tâche pour savoir si c'est correct ; un expert profite davantage du feedback autorégulation pour affiner ses stratégies","Le feedback est toujours plus efficace pour les débutants","L'expertise rend l'apprenant insensible au feedback","Le niveau d'expertise détermine uniquement la vitesse de traitement du feedback"],
+      correct: 0,
+      explain: "Hattie explique que le type de feedback optimal dépend du niveau : tâche pour les débutants (besoin de correction basique), processus pour les intermédiaires (stratégies), autorégulation pour les experts (auto-monitoring). Appliquer un feedback autorégulation à un débutant peut créer de la surcharge cognitive."
+    },
+    {
+      q: "Dans quelle mesure le feedback est-il un outil suffisant pour garantir l'apprentissage ?",
+      a: ["Il ne l'est pas — le feedback est un outil puissant mais partiel ; avec des apprenants inefficients, l'instruction directe est préférable","Il est suffisant si bien mis en œuvre — aucun autre outil n'est nécessaire","Il est insuffisant uniquement pour les matières littéraires","Le feedback seul garantit l'apprentissage si la relation pédagogique est de qualité"],
+      correct: 0,
+      explain: "Hattie avertit explicitement : 'le feedback n'est pas la réponse à un enseignement efficace, mais une réponse puissante parmi d'autres'. Avec des apprenants en acquisition initiale ou des concepts mal compris, l'instruction directe prime sur le feedback."
+    },
+    {
+      q: "Analyser : deux élèves ont le même score de 12/20. L'enseignant donne à l'un un feedback 'tâche' et à l'autre un feedback 'autorégulation'. Lequel progresse le plus et pourquoi ?",
+      a: ["Potentiellement l'élève ayant reçu le feedback autorégulation, car il développe des outils autonomes pour se corriger — mais cela dépend de son niveau de compétence préalable","L'élève ayant reçu le feedback tâche, car la correction explicite est toujours supérieure","Les deux progressent de façon identique","L'élève ayant reçu le feedback tâche s'il est débutant, l'autre s'il est avancé — la variable clé est le niveau"],
+      correct: 3,
+      explain: "La réponse correcte intègre la nuance centrale de Hattie : le type de feedback optimal dépend du niveau de compétence. Pour un débutant, le feedback tâche est plus adapté (a besoin de savoir si c'est correct). Pour un élève plus avancé, le feedback autorégulation développe l'autonomie à long terme."
+    },
+    {
+      q: "Comment expliquer le paradoxe suivant : le feedback immédiat est optimal neuronalement mais le feedback différé favorise parfois la rétention à long terme ?",
+      a: ["L'immédiateté est cruciale pour activer le signal d'erreur ; mais un léger délai (pas des semaines) peut forcer un effort de récupération supplémentaire bénéfique — ce n'est pas contradictoire","Il n'y a pas de paradoxe — le feedback immédiat est toujours supérieur","Le feedback différé est supérieur car il force la réflexion","Le timing du feedback n'a aucun impact sur la rétention"],
+      correct: 0,
+      explain: "Les neurosciences et la psychologie cognitive convergent : le feedback immédiat est essentiel pour activer le bon réseau neuronal. Cependant, un délai court (dite 'desirable difficulty') peut forcer un effort de récupération qui renforce la trace mémorielle. Le problème survient avec un délai trop long où la trace est perdue."
+    },
+    {
+      q: "Un élève est systématiquement en désaccord avec les corrections de l'enseignant et refuse d'intégrer le feedback. Quelle lecture théorique de Hattie s'applique ici ?",
+      a: ["La clé est que le feedback soit 'reçu et utilisé' — si l'élève ne l'intègre pas, l'efficacité est nulle quelle que soit sa qualité. Il faut travailler la réception avant la quantité de feedback.","L'élève a une motivation intrinsèque trop faible","L'enseignant devrait utiliser uniquement le feedback par les pairs","Le feedback n'est pas adapté à tous les profils d'élèves"],
+      correct: 0,
+      explain: "Hattie insiste sur la distinction entre feedback fourni et feedback reçu. Un excellent feedback ignoré vaut zéro. La solution est de travailler sur les conditions de réception : clarifier les critères (Feed Up), développer l'autoévaluation, construire un climat où l'erreur est levier, pas menace."
+    },
+    {
+      q: "Quelle est la relation entre le feedback et le développement d'un 'growth mindset' (Dweck) ?",
+      a: ["Le feedback processus et autorégulation favorise le growth mindset en montrant que la compétence se développe par l'effort et les stratégies — la louange du talent (fixed mindset) produit l'effet inverse","Le feedback positif seul suffit à développer le growth mindset","Le feedback est indépendant du mindset — les deux sont des variables séparées","Le feedback sur la tâche est le seul à influencer le mindset"],
+      correct: 0,
+      explain: "Les recherches de Dweck s'articulent directement avec les niveaux de Hattie : louer le talent ('Tu es intelligent') renforce le fixed mindset (l'intelligence est fixe, mieux vaut ne pas prendre de risques). Louer les stratégies et l'effort ('ta méthode a fonctionné, essayons d'aller plus loin') renforce le growth mindset."
+    },
+    {
+      q: "Pourquoi est-il problématique que la majorité du feedback reçu en classe provienne des pairs si ce feedback n'est pas encadré ?",
+      a: ["Nuthall a montré que la majorité de ce feedback entre pairs est incorrecte — des erreurs peuvent être consolidées plutôt que corrigées","Les pairs ne peuvent pas donner de feedback valable car ils ne maîtrisent pas les contenus","Le feedback entre pairs est trop positif pour être utile","Les enseignants perdent leur autorité si les pairs évaluent"],
+      correct: 0,
+      explain: "Nuthall (2005) révèle un paradoxe sérieux : le feedback entre pairs est quantitativement dominant, mais qualitativement peu fiable. Sans formation explicite des élèves aux critères et à l'évaluation, le feedback pair à pair peut renforcer des représentations erronées."
+    },
+    {
+      q: "Comment le modèle de feedback de Hattie peut-il être articulé avec la séquence métacognitive planification-monitoring-évaluation ?",
+      a: ["Feed Up correspond à la planification (objectifs), Feed Back au monitoring (où en suis-je), Feed Forward à l'évaluation/ajustement post-tâche","Les deux modèles sont indépendants et s'appliquent à des contextes différents","Le Feed Back couvre l'ensemble de la séquence métacognitive","Feed Up et Feed Back correspondent tous deux au monitoring"],
+      correct: 0,
+      explain: "L'articulation est élégante : le Feed Up soutient la planification ('où vais-je ?'), le Feed Back nourrit le monitoring ('comment je progresse ?'), et le Feed Forward alimente l'évaluation post-tâche et la planification de la prochaine étape ('où aller, comment m'améliorer ?')."
+    },
+    {
+      q: "Quelle critique peut-on adresser au modèle de Hattie sur le feedback en termes de transférabilité contextuelle ?",
+      a: ["Les méta-analyses agrègent des contextes très différents — un d = 0,73 global peut masquer des variations importantes selon la discipline, l'âge, le type de feedback réel","Le modèle est trop spécifique aux classes américaines","Le modèle ignore la dimension affective de l'apprentissage","Le modèle s'applique uniquement aux lycéens"],
+      correct: 0,
+      explain: "Une critique légitime de Hattie est l'agrégation : une méta-méta-analyse combine des milliers d'études très hétérogènes. La valeur d = 0,73 pour le feedback cache une variabilité massive (0 à +1,13 selon les études). Le contexte disciplinaire, l'âge, la culture scolaire modèrent fortement l'effet."
+    },
+    {
+      q: "En situation de classe à 30 élèves, quelle stratégie pédagogique permet de concilier feedback immédiat ET personnalisation pour chacun ?",
+      a: ["L'autoévaluation structurée avec grille critériée, les quiz formateurs à correction instantanée (Plickers, Wooclap) et les îlots de correction permettent un feedback immédiat scalable","Il est impossible de donner un feedback immédiat à 30 élèves","Seul le tutorat individuel permet un feedback vraiment efficace","Il faut réduire la taille des classes avant de pouvoir mettre en œuvre un bon feedback"],
+      correct: 0,
+      explain: "La contrainte des 30 élèves exige des stratégies systémiques : l'autoévaluation par grille critériée, les outils numériques de quiz formatifs, le travail en îlots de correction, et le feedback de classe entière sur les erreurs communes. Ce ne sont pas des substituts parfaits mais des solutions réalistes."
+    },
+    {
+      q: "Pourquoi est-il insuffisant de mesurer l'efficacité du feedback par le seul score immédiat post-feedback ?",
+      a: ["La rétention différée, le transfert et l'autorégulation sont des indicateurs plus robustes de l'apprentissage réel que la performance immédiate","Le score immédiat est toujours le meilleur indicateur de l'apprentissage","Les élèves sur-performent systématiquement juste après un feedback positif","La performance différée est moins pertinente que la performance immédiate en évaluation formative"],
+      correct: 0,
+      explain: "La psychologie cognitive distingue performance et apprentissage : un score élevé juste après le feedback peut refléter un effet de fluence temporaire. L'apprentissage réel se mesure à la rétention différée (test plusieurs semaines plus tard) et au transfert (application dans un nouveau contexte)."
+    },
+    {
+      q: "Dans quelle mesure les outils numériques éducatifs actuels exploitent-ils le mécanisme du feedback immédiat ?",
+      a: ["Ils offrent un feedback immédiat scalable, mais leur qualité dépend entièrement de la sophistication de la conception pédagogique — beaucoup restent au niveau tâche uniquement","Tous les outils numériques offrent un feedback de qualité équivalente à l'enseignant","Le numérique ne peut pas remplacer le feedback humain — il est totalement inefficace","Le numérique est toujours supérieur car il est objectif et immédiat"],
+      correct: 0,
+      explain: "Les recherches sur le numérique éducatif montrent que les plateformes d'e-learning offrent un feedback immédiat à grande échelle. Cependant, la qualité dépend de la conception : beaucoup restent à un niveau 'correct/incorrect' (tâche) sans atteindre les niveaux processus ou autorégulation — qui requièrent une conception pédagogique sophistiquée."
+    },
+    {
+      q: "Comment expliquer l'efficacité particulière du testing (quiz, interrogation) comme forme de feedback, selon les neurosciences ?",
+      a: ["Il combine engagement actif (production) + feedback immédiat (correction) + effort de récupération — trois mécanismes d'encodage puissants simultanément","Il est efficace principalement par la pression de l'évaluation","Il est plus motivant que la relecture, ce qui explique son efficacité","Il réduit la charge cognitive par rapport aux révisions traditionnelles"],
+      correct: 0,
+      explain: "L'effet test (testing effect) est l'un des phénomènes les mieux répliqués en psychologie cognitive. Il active simultanément : (1) le cerveau prédictif (formuler une réponse), (2) l'effort de récupération (chercher en mémoire), et (3) le feedback sur l'erreur de prédiction. Ces trois mécanismes renforcent l'encodage à long terme."
+    },
+    {
+      q: "Quelle est la limite principale de l'autoévaluation comme forme de feedback si les critères de réussite ne sont pas explicitement partagés ?",
+      a: ["L'élève évalue selon ses propres standards, souvent inexacts — le Feed Up (clarification des objectifs) est la condition préalable à toute autoévaluation valide","L'autoévaluation est toujours biaisée positivement et donc inutile","L'autoévaluation ne fonctionne qu'avec des élèves très avancés","La limite principale est le manque de temps pour la mettre en œuvre"],
+      correct: 0,
+      explain: "Sans critères explicites (Feed Up), l'autoévaluation est une évaluation selon des standards subjectifs ou inexacts. C'est pourquoi les grilles critériées (rubrics) sont indispensables : elles donnent à l'élève les mêmes référentiels que l'enseignant, rendant l'autoévaluation fonctionnelle et formative."
+    },
+    {
+      q: "En quoi le feedback formateur en classe peut-il réduire les inégalités scolaires selon la recherche en éducation ?",
+      a: ["Il démocratise l'accès à un guidage individualisé qui était réservé aux contextes de tutorat — en aidant tous les élèves à identifier leurs erreurs et ajuster leurs stratégies, pas seulement ceux qui bénéficient d'aide à la maison","Il ne réduit pas les inégalités — seule la réduction des effectifs peut le faire","Il bénéficie avant tout aux élèves déjà performants","Les inégalités sont trop structurelles pour être réduites par le seul feedback"],
+      correct: 0,
+      explain: "La métacognition et le feedback — tous deux à faible coût — peuvent potentiellement réduire les inégalités car les élèves défavorisés bénéficient moins du guidage informel à la maison. Un feedback structuré en classe démocratise l'accès à un apprentissage guidé qui compense partiellement ces différences de capital culturel."
+    },
+    {
+      q: "Comment articuler le concept d''erreur comme levier d'apprentissage' avec le modèle du cerveau prédictif pour concevoir une séquence pédagogique ?",
+      a: ["Concevoir d'abord une phase de production (générer des prédictions), puis un feedback immédiat (confrontation erreur/réponse correcte), puis une phase de restructuration (modifier le modèle interne) — l'erreur n'est pas un échec mais un signal neuronal d'apprentissage","Éviter les erreurs en guidant fortement l'élève avant toute production","L'erreur doit être traitée uniquement en dehors de la classe","Présenter d'abord les réponses correctes, puis les erreurs fréquentes"],
+      correct: 0,
+      explain: "Le séquençage optimal intègre : (1) engagement actif/prédiction (faire produire avant de corriger), (2) feedback immédiat ciblé sur l'erreur de prédiction (signal neuronal), (3) restructuration explicite du modèle interne (réécriture, reformulation). Ce cadre 'erreur comme opportunité' transforme l'évaluation formative en moteur d'apprentissage."
+    },
+    {
+      q: "Pourquoi les objectifs SMART sont-ils une condition préalable à un feedback efficace et non simplement un outil de gestion ?",
+      a: ["Sans objectif spécifique et mesurable (SMART), le feedback n'a pas de référent — il ne peut pas indiquer si l'élève s'approche ou s'éloigne du but, rendant le Feed Up impossible","Les SMART sont utiles uniquement pour l'enseignant, pas pour l'élève","Les SMART sont trop rigides pour les apprentissages créatifs","Les objectifs SMART sont efficaces uniquement en évaluation sommative"],
+      correct: 0,
+      explain: "Le Feed Up (première question du modèle de Hattie) exige que l'objectif soit clair, précis et partagé. Sans SMART, l'élève ne peut pas évaluer sa progression (Feed Back) ni savoir où aller (Feed Forward). L'objectif est la boussole — sans elle, le feedback ne peut pas indiquer la bonne direction."
+    },
+    {
+      q: "Analyser : un enseignant utilise des récompenses extrinsèques (classement, points bonus) pour motiver la participation aux activités de feedback en classe. Quel risque identifie la recherche ?",
+      a: ["Cela peut saperer la motivation intrinsèque à apprendre (d = –0,34 à –0,78 selon Deci et al.) et transformer le feedback en outil de compétition, réduisant l'ouverture à l'erreur","Ce système est toujours bénéfique car il augmente la participation","Les récompenses extrinsèques n'affectent pas la motivation intrinsèque à long terme","Ce risque est marginal et compensé par l'engagement à court terme qu'il génère"],
+      correct: 0,
+      explain: "Deci et al. (1999) montrent que les récompenses extrinsèques tangibles sapent la motivation intrinsèque (d = –0,34 à –0,78 en mode contrôlant). Associer feedback et compétition oriente les élèves vers la performance (être mieux que les autres) plutôt que vers l'apprentissage (comprendre et progresser) — le contraire de ce que vise un bon feedback."
+    },
+    {
+      q: "Quelle conclusion tirer de l'ensemble des recherches sur le feedback pour sa mise en œuvre optimale en classe ?",
+      a: ["Le feedback le plus efficace : immédiat, centré sur la tâche/processus/autorégulation (pas le soi), reçu ET utilisé par l'élève, calibré à son niveau de compétence, ancré dans des objectifs clairs, portant sur erreurs et réussites","Le feedback idéal est uniquement oral et positif","Le feedback idéal est donné uniquement par l'enseignant, jamais par les pairs","Le feedback efficace est toujours différé pour laisser du temps de réflexion"],
+      correct: 0,
+      explain: "La synthèse des recherches (Hattie, EEF, neurosciences, Deci et al.) converge : un feedback optimal est immédiat, informatif (tâche/processus/autorégulation), non menaçant (pas focalisé sur le soi), reçu et activement traité par l'élève, calibré à son niveau, ancré dans des objectifs précis, et équilibré entre erreurs et réussites."
+    },
+    {
+      q: "Comment la recherche collaborative en sciences cognitives peut-elle améliorer les pratiques de feedback des enseignants ?",
+      a: ["En créant des ponts entre chercheurs et praticiens — les enseignants testent des dispositifs fondés sur des preuves, partagent leurs observations, et contribuent à affiner les modèles théoriques","En imposant aux enseignants des protocoles rigides issus des laboratoires","En remplaçant les intuitions des enseignants par des algorithmes d'IA","En limitant le feedback aux seules pratiques validées par des essais randomisés"],
+      correct: 0,
+      explain: "La recherche collaborative en sciences cognitives souligne que le lien neurosciences-classe est plus fécond quand il est bidirectionnel : les praticiens informent les chercheurs sur les contraintes réelles (30 élèves, feedback différé, formats variés), et les chercheurs offrent des cadres théoriques pour interpréter et améliorer les pratiques. C'est le cœur du mouvement Evidence-Based Education."
+    },
+    {
+      q: "Pourquoi l'effet test (testing effect) est-il plus puissant que la relecture pour la rétention à long terme, en lien avec le mécanisme du feedback ?",
+      a: ["Parce qu'il force une récupération active (effort mnésique) + génère une prédiction que le feedback vient corriger ou confirmer — la relecture reste passive et n'active pas le signal d'erreur de prédiction","Parce que les tests réduisent l'anxiété mieux que la relecture","Parce que les tests sont plus courts et donc moins fatigants","Parce que la relecture crée une illusion de maîtrise que le test révèle"],
+      correct: 0,
+      explain: "L'effet test dépasse la seule réduction de l'illusion de maîtrise (fluence). Il exploite le mécanisme prédictif : l'effort de récupération génère une prédiction explicite. Le feedback (correction ou confirmation) crée ensuite le signal d'erreur (ou de confirmation) qui renforce l'encodage. La relecture passive ne génère aucune de ces deux étapes cruciales."
+    }
+  ]
+};
+
+// ═════════════════════════ STATE ═════════════════════════
+const LEVELS = ['novice', 'alaise', 'expert'];
+const LEVEL_NAMES = { novice: 'Je découvre', alaise: 'Je suis à l\'aise', expert: 'J\'approche de l\'expertise' };
+const LEVEL_ICONS = { novice: '🌱', alaise: '⚡', expert: '🔬' };
+const LEVEL_DESCS = { novice: 'Repérage & compréhension explicite', alaise: 'Liens, nuances, distinctions fines', expert: 'Analyse, transfert & cas complexes' };
+const PASS_SCORE = 80;
+const Q_PER_SESSION = 10;
+
+let state = {
+  unlockedLevel: 0,
+  completedLevels: [],
+  currentLevel: 0,
+  sessionQuestions: [],
+  currentQ: 0,
+  score: 0,
+  errors: [],
+  answered: false
+};
+
+function loadState() {
+  try {
+    const s = localStorage.getItem('fb_quiz_state');
+    if (s) {
+      const saved = JSON.parse(s);
+      state.unlockedLevel = saved.unlockedLevel || 0;
+      state.completedLevels = saved.completedLevels || [];
+    }
+  } catch(e) {}
+}
+
+function saveState() {
+  try {
+    localStorage.setItem('fb_quiz_state', JSON.stringify({
+      unlockedLevel: state.unlockedLevel,
+      completedLevels: state.completedLevels
+    }));
+  } catch(e) {}
+}
+
+// ═════════════════════════ UTILS ═════════════════════════
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// ═════════════════════════ HOME ═════════════════════════
+function renderHome() {
+  const grid = document.getElementById('levels-grid');
+  grid.innerHTML = '';
+  LEVELS.forEach((level, i) => {
+    const unlocked = i <= state.unlockedLevel;
+    const completed = state.completedLevels.includes(level);
+    const tagClass = ['tag-novice', 'tag-alaise', 'tag-expert'][i];
+    grid.innerHTML += `
+      <div class="level-card ${completed ? 'completed' : unlocked ? 'unlocked' : 'locked'}">
+        ${completed ? '<div class="lc-check">✓</div>' : ''}
+        <div class="lc-icon">${LEVEL_ICONS[level]}</div>
+        <div class="lc-name">${LEVEL_NAMES[level]}</div>
+        <div class="lc-desc">${LEVEL_DESCS[level]}</div>
+      </div>`;
+  });
+
+  const currentLevel = state.unlockedLevel;
+  const allDone = state.completedLevels.length === 3;
+  const btn = document.getElementById('btn-start');
+  if (allDone) {
+    btn.textContent = '🏅 Voir mon badge';
+    btn.onclick = () => showScreen('badge');
+  } else {
+    btn.textContent = `Jouer — Niveau ${LEVEL_NAMES[LEVELS[currentLevel]]} →`;
+    btn.onclick = startCurrentLevel;
+  }
+}
+
+function startCurrentLevel() {
+  const level = LEVELS[state.unlockedLevel];
+  const pool = shuffle(QUESTIONS[level]).slice(0, Q_PER_SESSION);
+  state.sessionQuestions = pool.map(q => {
+    const answers = q.a.map((text, i) => ({ text, originalIndex: i }));
+    const shuffled = shuffle(answers);
+    const newCorrect = shuffled.findIndex(a => a.originalIndex === q.correct);
+    return { q: q.q, a: shuffled.map(a => a.text), correct: newCorrect, explain: q.explain };
+  });
+  state.currentQ = 0;
+  state.score = 0;
+  state.errors = [];
+  state.currentLevel = state.unlockedLevel;
+  showScreen('quiz');
+  renderQuestion();
+}
+
+// ═════════════════════════ QUIZ ═════════════════════════
+function renderQuestion() {
+  const q = state.sessionQuestions[state.currentQ];
+  const levelKey = LEVELS[state.currentLevel];
+  const tagClass = ['tag-novice', 'tag-alaise', 'tag-expert'][state.currentLevel];
+
+  document.getElementById('quiz-level-tag').textContent = LEVEL_NAMES[levelKey];
+  document.getElementById('quiz-level-tag').className = 'quiz-level-tag ' + tagClass;
+  document.getElementById('quiz-progress').textContent = `Q ${state.currentQ + 1}/${Q_PER_SESSION}`;
+  document.getElementById('quiz-score-mini').textContent = `Score : ${state.score}%`;
+  document.getElementById('q-num').textContent = `Question ${state.currentQ + 1}`;
+  document.getElementById('q-text').textContent = q.q;
+
+  const pct = (state.currentQ / Q_PER_SESSION) * 100;
+  document.getElementById('progress-fill').style.width = pct + '%';
+
+  const list = document.getElementById('answers-list');
+  const letters = ['A','B','C','D'];
+  list.innerHTML = '';
+  q.a.forEach((ans, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'answer-btn';
+    btn.innerHTML = `<span class="ans-letter">${letters[i]}</span><span>${ans}</span>`;
+    btn.onclick = () => selectAnswer(i);
+    list.appendChild(btn);
+  });
+
+  document.getElementById('feedback-box').style.display = 'none';
+  document.getElementById('btn-next').style.display = 'none';
+  state.answered = false;
+}
+
+function selectAnswer(idx) {
+  if (state.answered) return;
+  state.answered = true;
+
+  const q = state.sessionQuestions[state.currentQ];
+  const btns = document.querySelectorAll('.answer-btn');
+  const isCorrect = idx === q.correct;
+
+  btns.forEach((btn, i) => {
+    btn.disabled = true;
+    if (i === q.correct) btn.classList.add('correct');
+    else if (i === idx && !isCorrect) btn.classList.add('wrong');
+    else btn.classList.add('dimmed');
+  });
+
+  const fb = document.getElementById('feedback-box');
+  fb.className = 'feedback-box ' + (isCorrect ? 'correct' : 'wrong');
+  fb.style.display = 'block';
+  document.getElementById('fb-verdict').textContent = isCorrect ? '✓ Bonne réponse !' : '✗ Pas tout à fait…';
+  document.getElementById('fb-explain').textContent = q.explain;
+
+  if (isCorrect) {
+    state.score += 10;
+    document.getElementById('quiz-score-mini').textContent = `Score : ${state.score}%`;
+  } else {
+    state.errors.push({
+      question: q.q,
+      chosen: q.a[idx],
+      correct: q.a[q.correct],
+      explain: q.explain
+    });
+  }
+
+  document.getElementById('btn-next').style.display = 'block';
+  document.getElementById('btn-next').textContent = state.currentQ < Q_PER_SESSION - 1 ? 'Question suivante →' : 'Voir mes résultats →';
+}
+
+function nextQuestion() {
+  state.currentQ++;
+  if (state.currentQ < Q_PER_SESSION) {
+    renderQuestion();
+  } else {
+    showResults();
+  }
+}
+
+// ═════════════════════════ RESULTS ═════════════════════════
+function showResults() {
+  showScreen('results');
+  const pass = state.score >= PASS_SCORE;
+  const hero = document.getElementById('result-hero');
+  hero.className = 'result-hero ' + (pass ? 'pass' : 'fail');
+  document.getElementById('result-prog-bar').style.background = pass ? 'rgba(255,255,255,0.25)' : 'var(--gray-200)';
+  document.getElementById('result-prog-fill').style.background = pass ? 'rgba(255,255,255,0.85)' : 'var(--green)';
+  document.getElementById('result-emoji').textContent = pass ? '🎉' : '💡';
+  document.getElementById('result-score').textContent = state.score + '%';
+  setTimeout(() => { document.getElementById('result-prog-fill').style.width = state.score + '%'; }, 100);
+  document.getElementById('result-verdict').textContent = pass
+    ? 'Niveau validé — bien joué !'
+    : `Il faut 80% pour passer. Encore ${80 - state.score}% manquants !`;
+
+  const errSec = document.getElementById('errors-section');
+  const errList = document.getElementById('errors-list');
+  if (state.errors.length > 0) {
+    errSec.style.display = 'block';
+    errList.innerHTML = state.errors.map(e => `
+      <div class="error-item">
+        <div class="error-q">❓ ${e.question}</div>
+        <div class="error-yours">✗ Votre réponse : ${e.chosen}</div>
+        <div class="error-correct">✓ Bonne réponse : ${e.correct}</div>
+        <div class="error-explain">💡 ${e.explain}</div>
+      </div>`).join('');
+  } else {
+    errSec.style.display = 'none';
+  }
+
+  const btnNext = document.getElementById('btn-next-level');
+  if (pass) {
+    const levelKey = LEVELS[state.currentLevel];
+    if (!state.completedLevels.includes(levelKey)) {
+      state.completedLevels.push(levelKey);
+    }
+    const nextIdx = state.currentLevel + 1;
+    if (nextIdx < LEVELS.length) {
+      state.unlockedLevel = Math.max(state.unlockedLevel, nextIdx);
+    }
+    saveState();
+
+    if (state.completedLevels.length === 3) {
+      btnNext.textContent = '🏅 Récupérer mon badge →';
+    } else {
+      btnNext.textContent = `Niveau suivant : ${LEVEL_NAMES[LEVELS[nextIdx]]} →`;
+    }
+    btnNext.style.display = 'block';
+  } else {
+    btnNext.style.display = 'none';
+  }
+}
+
+function nextLevelOrBadge() {
+  if (state.completedLevels.length === 3) {
+    showScreen('badge');
+  } else {
+    state.unlockedLevel = Math.min(state.currentLevel + 1, LEVELS.length - 1);
+    showScreen('home');
+    renderHome();
+  }
+}
+
+function retryLevel() {
+  showScreen('home');
+  renderHome();
+}
+
+function resetAll() {
+  state.unlockedLevel = 0;
+  state.completedLevels = [];
+  saveState();
+  showScreen('home');
+  renderHome();
+}
+
+// ═════════════════════════ INIT ═════════════════════════
+loadState();
+renderHome();
+showScreen('home');
+</script>
+</body>
+</html>
